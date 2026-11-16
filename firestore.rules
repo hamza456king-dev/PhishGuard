@@ -1,0 +1,222 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'hamza.456.king@gmail.com';
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        isBootstrappedAdmin() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidUserPublicProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'role', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'role', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+        data.role is string && data.role.size() <= 20 && data.role in ['analyst', 'admin'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateSettings(data) {
+      return data.keys().hasAll(['uid', 'email', 'consentExternalScans', 'retentionDays', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'consentExternalScans', 'retentionDays', 'updatedAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 254 &&
+        data.consentExternalScans is bool &&
+        data.retentionDays is number && data.retentionDays >= 1 && data.retentionDays <= 3650 &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidScanRecord(data) {
+      return data.keys().hasAll([
+          'analysis_id', 'ownerId', 'analyzed_at', 'sample_type', 'sample_name',
+          'classification', 'severity', 'confidence', 'link_status', 'domain',
+          'sha256', 'executive_summary', 'final_verdict', 'report_payload',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'analysis_id', 'ownerId', 'analyzed_at', 'sample_type', 'sample_name',
+          'classification', 'severity', 'confidence', 'link_status', 'domain',
+          'sha256', 'executive_summary', 'final_verdict', 'report_payload',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.analysis_id is string && data.analysis_id.size() >= 1 && data.analysis_id.size() <= 128 && data.analysis_id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.analyzed_at is string && data.analyzed_at.size() >= 1 && data.analyzed_at.size() <= 64 &&
+        data.sample_type is string && data.sample_type.size() <= 32 && data.sample_type in ['URL', 'MESSAGE', 'EMAIL', 'FILE', 'IMAGE'] &&
+        data.sample_name is string && data.sample_name.size() >= 1 && data.sample_name.size() <= 500 &&
+        data.classification is string && data.classification.size() <= 32 && data.classification in ['SAFE', 'SUSPICIOUS', 'PHISHING', 'MALICIOUS', 'UNKNOWN'] &&
+        data.severity is string && data.severity.size() <= 32 && data.severity in ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] &&
+        data.confidence is number && data.confidence >= 0 && data.confidence <= 100 &&
+        data.link_status is string && data.link_status.size() <= 32 && data.link_status in ['WORKING', 'REDIRECTED', 'UNREACHABLE', 'BLOCKED', 'NOT_APPLICABLE', 'UNKNOWN'] &&
+        data.domain is string && data.domain.size() <= 255 &&
+        data.sha256 is string && data.sha256.size() <= 128 &&
+        data.executive_summary is string && data.executive_summary.size() <= 4000 &&
+        data.final_verdict is string && data.final_verdict.size() <= 2000 &&
+        data.report_payload is string && data.report_payload.size() <= 100000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['id', 'ownerId', 'action', 'sample_type', 'classification', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'ownerId', 'action', 'sample_type', 'classification', 'createdAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.action is string && data.action.size() >= 1 && data.action.size() <= 120 &&
+        data.sample_type is string && data.sample_type.size() <= 32 &&
+        data.classification is string && data.classification.size() <= 32 &&
+        data.createdAt is timestamp;
+    }
+
+    // 4. Collection Rules
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isVerifiedUser() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list: if false;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        request.auth.uid == userId &&
+        isValidUserPublicProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().role == 'analyst' || (incoming().role == 'admin' && isAdmin()));
+
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        request.auth.uid == userId &&
+        isValidUserPublicProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (incoming().role == existing().role && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt'])) ||
+          isAdmin()
+        );
+
+      allow delete: if false;
+
+      // Subcollection: Isolated PII & Privacy Settings (Master Gate enforced)
+      match /private/{docId} {
+        allow get: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          request.auth.uid == userId &&
+          get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+
+        allow list: if false;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          request.auth.uid == userId &&
+          isValidUserPrivateSettings(incoming()) &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          request.auth.uid == userId &&
+          isValidUserPrivateSettings(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['consentExternalScans', 'retentionDays', 'updatedAt']) &&
+          get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          request.auth.uid == userId &&
+          get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+      }
+    }
+
+    match /scans/{scanId} {
+      allow get: if isVerifiedUser() && isValidId(scanId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(scanId) &&
+        isValidScanRecord(incoming()) &&
+        incoming().analysis_id == scanId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+
+      allow update: if isVerifiedUser() &&
+        isValidId(scanId) &&
+        isValidScanRecord(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().analysis_id == existing().analysis_id &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'analyzed_at', 'classification', 'severity', 'confidence',
+            'link_status', 'executive_summary', 'final_verdict', 'report_payload', 'updatedAt'
+          ]) ||
+          isAdmin()
+        );
+
+      allow delete: if isVerifiedUser() && isValidId(scanId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /audit_logs/{logId} {
+      allow get: if isVerifiedUser() && isValidId(logId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(logId) &&
+        isValidAuditLog(incoming()) &&
+        incoming().id == logId &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+
+      allow update, delete: if false;
+    }
+  }
+}

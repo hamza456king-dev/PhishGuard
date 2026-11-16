@@ -1,0 +1,6 @@
+{
+  "name": "PhishGuard — منصة التحليل الأمني واكتشاف التصيد",
+  "description": "منصة متكاملة للأمن السيبراني وتحليل التهديدات واكتشاف التصيد الاحتيالي والهندسة الاجتماعية والملفات الضارة القائمة على الأدلة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

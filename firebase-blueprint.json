@@ -1,0 +1,241 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Public non-PII profile information for an analyst user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Display name of the analyst."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["analyst", "admin"],
+          "maxLength": 20,
+          "description": "Role of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "role", "createdAt", "updatedAt"]
+    },
+    "UserPrivateSettings": {
+      "title": "UserPrivateSettings",
+      "description": "Isolated PII and privacy settings for the user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner UID."
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254,
+          "description": "Email address of the user."
+        },
+        "consentExternalScans": {
+          "type": "boolean",
+          "description": "Whether the user consents to sending indicators to external threat intelligence APIs."
+        },
+        "retentionDays": {
+          "type": "number",
+          "description": "Number of days to retain scan reports."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated timestamp."
+        }
+      },
+      "required": ["uid", "email", "consentExternalScans", "retentionDays", "updatedAt"]
+    },
+    "ScanRecord": {
+      "title": "ScanRecord",
+      "description": "Forensic cybersecurity analysis report stored by an analyst.",
+      "type": "object",
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique identifier of the scan report."
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the analyst who ran the scan."
+        },
+        "analyzed_at": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "ISO timestamp of analysis."
+        },
+        "sample_type": {
+          "type": "string",
+          "enum": ["URL", "MESSAGE", "EMAIL", "FILE", "IMAGE"],
+          "maxLength": 32,
+          "description": "Category of the analyzed sample."
+        },
+        "sample_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Display name or truncated identifier of the sample."
+        },
+        "classification": {
+          "type": "string",
+          "enum": ["SAFE", "SUSPICIOUS", "PHISHING", "MALICIOUS", "UNKNOWN"],
+          "maxLength": 32,
+          "description": "Primary security classification."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+          "maxLength": 32,
+          "description": "Independent severity rating."
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence score from 0 to 100."
+        },
+        "link_status": {
+          "type": "string",
+          "enum": ["WORKING", "REDIRECTED", "UNREACHABLE", "BLOCKED", "NOT_APPLICABLE", "UNKNOWN"],
+          "maxLength": 32,
+          "description": "Reachability status of URL if applicable."
+        },
+        "domain": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Extracted primary domain or empty string."
+        },
+        "sha256": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "SHA-256 hash of sample or empty string."
+        },
+        "executive_summary": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "Executive summary of findings."
+        },
+        "final_verdict": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Direct final verdict statement."
+        },
+        "report_payload": {
+          "type": "string",
+          "maxLength": 100000,
+          "description": "Serialized full structured report."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "analysis_id",
+        "ownerId",
+        "analyzed_at",
+        "sample_type",
+        "sample_name",
+        "classification",
+        "severity",
+        "confidence",
+        "link_status",
+        "domain",
+        "sha256",
+        "executive_summary",
+        "final_verdict",
+        "report_payload",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security audit log entry for user actions.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Log entry ID."
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the acting user."
+        },
+        "action": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Action identifier."
+        },
+        "sample_type": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Sample type involved."
+        },
+        "classification": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Resulting classification."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp."
+        }
+      },
+      "required": ["id", "ownerId", "action", "sample_type", "classification", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPublicProfile" },
+      "description": "Stores public non-PII analyst profiles."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateSettings" },
+      "description": "Stores isolated PII and privacy preferences for the owner."
+    },
+    "/scans/{scanId}": {
+      "schema": { "$ref": "#/entities/ScanRecord" },
+      "description": "Stores forensic scan reports owned by individual analysts."
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Stores immutable security audit logs per user."
+    }
+  }
+}
